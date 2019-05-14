@@ -9,11 +9,14 @@ linecount = 0
 mainoptions = {}
 suboptions = {}
 
+def SetStyle():
+    pass
+
 def Setup():
     global buf
     buf += f"<!DOCTYPE html>\n<html>\n\t<title>{tmptitle}</title>\n\n\t<meta charset=\"UTF-8\">\n\n"
     buf += f"\t<head>\n\t\t<h1>{tmptitle}</h1>\n\t</head>\n\n"
-    # put in style tags here
+    SetStyle()
     buf += "\t<body>\n"
 
 def Finish():
@@ -26,38 +29,63 @@ def GetNextLine():
     linecount += 1
     return line
 
-def SetTitle(title):
+def CheckSyntax(line):
+    linearr = line.split(' ',1)
+
+    command = linearr[0]
+    if command not in mainoptions:
+        stderr.write(f'Unexpected command at line {linecount}:\n{line}\n')
+        exit(1)
+
+    if command[0] in ['}']:
+        stderr.write(f'Bad format: Unexpected }} at line {linecount}:\n{line}\n')
+        exit(2)
+
+    if command[0] in ['{'] and len(linearr) != 1:
+        stderr.write(f'Bad format: Line {linecount} begins with {{ but has trailing characters:\n{line}\n')
+        exit(3)
+
+    if command[0] in ['|', '='] and len(linearr) != 2:
+        stderr.write(f'Bad format: Line {linecount} begins with {command[0]} but is not a complete line:\n{line}\n')
+        exit(4)
+
+
+def SetTitle(line):
     global buf
-    buf = buf.replace(tmptitle,title)
+    buf = buf.replace(tmptitle,line.split(' ',1)[1])
 
-def SetHeadVerse():
+def NewSection(line):
     pass
 
-def SetVerse():
+def SetHeadVerse(line):
     pass
 
-def NewPoint():
+def SetVerse(line):
     pass
 
-def StartSeeOther():
+def NewPoint(line):
     pass
 
-def SetTranslation():
+def StartSeeOther(line):
     pass
 
-def StartHeadVerse():
+def SetTranslation(line):
     pass
 
-def StartVerse():
+def StartHeadVerse(line):
     pass
 
-def FullHeadVerse():
+def StartVerse(line):
     pass
 
-def FullVerse():
+def FullHeadVerse(line):
+    pass
+
+def FullVerse(line):
     pass
 
 mainoptions['|T'] = SetTitle
+mainoptions['|H'] = NewSection
 mainoptions['|V'] = SetHeadVerse
 mainoptions['|v'] = SetVerse
 mainoptions['|p'] = NewPoint
@@ -85,16 +113,12 @@ def main():
             print(buf)
             break
 
-        if ' ' not in line:
-            stderr.write(f'Bad format at line {linecount}:\n{line}')
-            exit(1)
+        line = line.strip()
 
-        command,realline = line.strip().split(' ',1)
-        if command not in mainoptions:
-            stderr.write(f'Unexpected command at line {linecount}:\n{line}')
-            exit(2)
+        CheckSyntax(line)
 
-        mainoptions[command](realline)
+        command = line.split(' ',1)[0]
+        mainoptions[command](line)
 
 if __name__ == "__main__":
     main()
