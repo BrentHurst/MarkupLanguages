@@ -27,7 +27,10 @@ def GetNextLine():
     global linecount
     line = stdin.readline()
     linecount += 1
-    return line
+    if line == '\n':
+        return GetNextLine()
+    else:
+        return line
 
 def CheckSyntax(line):
     linearr = line.split(' ',1)
